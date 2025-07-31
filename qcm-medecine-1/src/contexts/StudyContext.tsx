@@ -67,16 +67,18 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [studySessions, setStudySessions] = useState<StudySession[]>([]);
 
   useEffect(() => {
-    // Charger les données depuis localStorage
-    const savedCourses = localStorage.getItem('courses');
-    const savedSessions = localStorage.getItem('studySessions');
-    
-    if (savedCourses) {
-      setCourses(JSON.parse(savedCourses));
-    }
-    
-    if (savedSessions) {
-      setStudySessions(JSON.parse(savedSessions));
+    if (typeof window !== 'undefined') {
+      // Charger les données depuis localStorage
+      const savedCourses = localStorage.getItem('courses');
+      const savedSessions = localStorage.getItem('studySessions');
+      
+      if (savedCourses) {
+        setCourses(JSON.parse(savedCourses));
+      }
+      
+      if (savedSessions) {
+        setStudySessions(JSON.parse(savedSessions));
+      }
     }
   }, []);
 

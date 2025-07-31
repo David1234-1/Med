@@ -31,14 +31,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
-    // Charger l'utilisateur depuis localStorage
-    const savedUser = localStorage.getItem('user');
-    const savedGuest = localStorage.getItem('isGuest');
-    
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    } else if (savedGuest === 'true') {
-      setIsGuest(true);
+    if (typeof window !== 'undefined') {
+      // Charger l'utilisateur depuis localStorage
+      const savedUser = localStorage.getItem('user');
+      const savedGuest = localStorage.getItem('isGuest');
+      
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      } else if (savedGuest === 'true') {
+        setIsGuest(true);
+      }
     }
   }, []);
 
@@ -52,6 +54,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      if (typeof window === 'undefined') return false;
+      
       const users = JSON.parse(localStorage.getItem('users') || '[]');
       const hashedPassword = await hashPassword(password);
       
@@ -83,6 +87,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (name: string, email: string, password: string): Promise<boolean> => {
     try {
+      if (typeof window === 'undefined') return false;
+      
       const users = JSON.parse(localStorage.getItem('users') || '[]');
       
       // Vérifier si l'email existe déjà
@@ -124,15 +130,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     setIsGuest(false);
-    localStorage.removeItem('user');
-    localStorage.removeItem('isGuest');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+      localStorage.removeItem('isGuest');
+    }
   };
 
   const loginAsGuest = () => {
     setUser(null);
     setIsGuest(true);
-    localStorage.removeItem('user');
-    localStorage.setItem('isGuest', 'true');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+      localStorage.setItem('isGuest', 'true');
+    }
   };
 
   return (
