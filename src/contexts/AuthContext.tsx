@@ -1,17 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, UserPreferences } from '../types';
-import { authService } from '../lib/auth';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+}
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  updatePreferences: (preferences: Partial<UserPreferences>) => Promise<void>;
-  updatePoints: (points: number) => Promise<void>;
-  updateStudyTime: (minutes: number) => Promise<void>;
-  createGuestUser: () => void;
-  isLoading: boolean;
+  isGuest: boolean;
+  loginAsGuest: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,102 +26,124 @@ export const useAuth = () => {
   return context;
 };
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
-    // Charger l'utilisateur au démarrage
-    const currentUser = authService.getCurrentUser();
-    setUser(currentUser);
-    setIsLoading(false);
+    // Charger l'utilisateur depuis localStorage
+    const savedUser = localStorage.getItem('user');
+    const savedGuest = localStorage.getItem('isGuest');
+    
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    } else if (savedGuest === 'true') {
+      setIsGuest(true);
+    }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      setIsLoading(true);
-      const loggedInUser = await authService.login(email, password);
-      setUser(loggedInUser);
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const hashedPassword = await hashPassword(password);
+      
+      const foundUser = users.find((u: any) => 
+        u.email === email && u.password === hashedPassword
+      );
+      
+      if (foundUser) {
+        const userData = {
+          id: foundUser.id,
+          name: foundUser.name,
+          email: foundUser.email,
+          createdAt: new Date(foundUser.createdAt)
+        };
+        
+        setUser(userData);
+        setIsGuest(false);
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('isGuest', 'false');
+        return true;
+      }
+      
+      return false;
     } catch (error) {
-      throw error;
-    } finally {
-      setIsLoading(false);
+      console.error('Erreur de connexion:', error);
+      return false;
     }
   };
 
-  const register = async (email: string, username: string, password: string) => {
+  const register = async (name: string, email: string, password: string): Promise<boolean> => {
     try {
-      setIsLoading(true);
-      const newUser = await authService.register(email, username, password);
-      setUser(newUser);
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      
+      // Vérifier si l'email existe déjà
+      if (users.find((u: any) => u.email === email)) {
+        return false;
+      }
+      
+      const hashedPassword = await hashPassword(password);
+      const newUser = {
+        id: Date.now().toString(),
+        name,
+        email,
+        password: hashedPassword,
+        createdAt: new Date().toISOString()
+      };
+      
+      users.push(newUser);
+      localStorage.setItem('users', JSON.stringify(users));
+      
+      const userData = {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        createdAt: new Date(newUser.createdAt)
+      };
+      
+      setUser(userData);
+      setIsGuest(false);
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('isGuest', 'false');
+      
+      return true;
     } catch (error) {
-      throw error;
-    } finally {
-      setIsLoading(false);
+      console.error('Erreur d\'inscription:', error);
+      return false;
     }
   };
 
   const logout = () => {
-    authService.logout();
     setUser(null);
+    setIsGuest(false);
+    localStorage.removeItem('user');
+    localStorage.removeItem('isGuest');
   };
 
-  const updatePreferences = async (preferences: Partial<UserPreferences>) => {
-    if (!user) return;
-    
-    try {
-      await authService.updatePreferences(preferences);
-      setUser(prev => prev ? { ...prev, preferences: { ...prev.preferences, ...preferences } } : null);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const updatePoints = async (points: number) => {
-    if (!user) return;
-    
-    try {
-      await authService.updatePoints(points);
-      setUser(prev => prev ? { ...prev, points: prev.points + points } : null);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const updateStudyTime = async (minutes: number) => {
-    if (!user) return;
-    
-    try {
-      await authService.updateStudyTime(minutes);
-      setUser(prev => prev ? { ...prev, studyTime: prev.studyTime + minutes } : null);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const createGuestUser = () => {
-    const guestUser = authService.createGuestUser();
-    setUser(guestUser);
-  };
-
-  const value: AuthContextType = {
-    user,
-    login,
-    register,
-    logout,
-    updatePreferences,
-    updatePoints,
-    updateStudyTime,
-    createGuestUser,
-    isLoading
+  const loginAsGuest = () => {
+    setUser(null);
+    setIsGuest(true);
+    localStorage.removeItem('user');
+    localStorage.setItem('isGuest', 'true');
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{
+      user,
+      login,
+      register,
+      logout,
+      isGuest,
+      loginAsGuest
+    }}>
       {children}
     </AuthContext.Provider>
   );
