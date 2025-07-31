@@ -1,348 +1,172 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  User, 
-  Mail, 
-  Lock, 
-  LogIn, 
-  UserPlus, 
-  LogOut,
-  Guest,
-  Settings,
-  Shield
-} from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useStudy } from '../contexts/StudyContext';
+import { User, Settings, BookOpen, Target, Clock, Award } from 'lucide-react';
 
 const Profile: React.FC = () => {
-  const { user, isGuest, login, register, logout, loginAsGuest } = useAuth();
-  const { getStudyStats } = useStudy();
-  const stats = getStudyStats();
-
-  const [isLoginMode, setIsLoginMode] = useState(true);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (isLoginMode) {
-      // Login
-      const success = await login(formData.email, formData.password);
-      if (success) {
-        setSuccess('Connexion réussie !');
-        setFormData({ name: '', email: '', password: '', confirmPassword: '' });
-      } else {
-        setError('Email ou mot de passe incorrect');
-      }
-    } else {
-      // Register
-      if (formData.password !== formData.confirmPassword) {
-        setError('Les mots de passe ne correspondent pas');
-        return;
-      }
-
-      const success = await register(formData.name, formData.email, formData.password);
-      if (success) {
-        setSuccess('Inscription réussie !');
-        setFormData({ name: '', email: '', password: '', confirmPassword: '' });
-        setIsLoginMode(true);
-      } else {
-        setError('Cet email est déjà utilisé');
-      }
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleGuestLogin = () => {
-    loginAsGuest();
-    setSuccess('Mode invité activé');
-  };
-
-  if (user || isGuest) {
-    return (
-      <div className="p-6 max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* Header */}
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Profil
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Gérez votre compte et vos préférences
-            </p>
-          </div>
-
-          {/* User Info */}
-          <div className="card p-6">
-            <div className="flex items-center space-x-4 mb-6">
-              <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center">
-                <User className="w-8 h-8 text-primary-600 dark:text-primary-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {user ? user.name : 'Utilisateur invité'}
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {user ? user.email : 'Mode invité - Données locales uniquement'}
-                </p>
-                {user && (
-                  <p className="text-sm text-gray-500 dark:text-gray-500">
-                    Membre depuis {new Date(user.createdAt).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Cours importés
-                </h3>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.totalCourses}
-                </p>
-              </div>
-              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Sessions d'étude
-                </h3>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.totalSessions}
-                </p>
-              </div>
-              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Score moyen
-                </h3>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.averageScore > 0 ? `${Math.round(stats.averageScore)}%` : 'N/A'}
-                </p>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={logout}
-                className="btn-secondary flex items-center space-x-2"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Se déconnecter</span>
-              </button>
-              
-              {isGuest && (
-                <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                  <Shield className="w-4 h-4" />
-                  <span>Mode invité - Données locales</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Info */}
-          <div className="card p-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
-            <div className="flex items-start space-x-3">
-              <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                  Données locales
-                </h4>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  Toutes vos données (cours, sessions d'étude, messages) sont stockées localement 
-                  dans votre navigateur. Elles ne sont jamais envoyées vers des serveurs externes.
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
+  const [activeTab, setActiveTab] = useState<'profile' | 'settings' | 'stats'>('profile');
 
   return (
-    <div className="p-6 max-w-md mx-auto">
+    <div className="p-6 max-w-4xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
         className="space-y-6"
       >
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="mx-auto w-16 h-16 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center mb-4">
-            <User className="w-8 h-8 text-primary-600 dark:text-primary-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {isLoginMode ? 'Connexion' : 'Inscription'}
+          <h1 className="text-3xl font-bold text-gray-900">
+            Profil
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {isLoginMode 
-              ? 'Connectez-vous à votre compte' 
-              : 'Créez votre compte pour commencer'
-            }
+          <p className="text-gray-600">
+            Gérez vos informations et paramètres
           </p>
         </div>
 
-        {/* Auth Form */}
-        <div className="card p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLoginMode && (
+        {/* Tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex space-x-1 bg-gray-100 p-1 rounded-lg"
+        >
+          {[
+            { id: 'profile', label: 'Profil', icon: User },
+            { id: 'settings', label: 'Paramètres', icon: Settings },
+            { id: 'stats', label: 'Statistiques', icon: Award }
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </motion.div>
+
+        {/* Content */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white rounded-lg shadow-md border border-gray-200"
+        >
+          {activeTab === 'profile' && (
+            <div className="p-6">
+              <div className="text-center space-y-4">
+                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                  <User className="w-10 h-10 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Utilisateur
+                  </h3>
+                  <p className="text-gray-600">
+                    Mode invité
+                  </p>
+                </div>
+                <div className="text-sm text-gray-500">
+                  Connectez-vous pour sauvegarder vos données
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="p-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nom complet
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required={!isLoginMode}
-                  className="input"
-                  placeholder="Votre nom"
-                />
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Paramètres
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div>
+                      <h4 className="font-medium text-gray-900">Mode sombre</h4>
+                      <p className="text-sm text-gray-600">Activer le thème sombre</p>
+                    </div>
+                    <div className="w-12 h-6 bg-gray-200 rounded-full relative">
+                      <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 shadow-sm"></div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div>
+                      <h4 className="font-medium text-gray-900">Notifications</h4>
+                      <p className="text-sm text-gray-600">Recevoir des rappels d'étude</p>
+                    </div>
+                    <div className="w-12 h-6 bg-gray-200 rounded-full relative">
+                      <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 shadow-sm"></div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div>
+                      <h4 className="font-medium text-gray-900">Sauvegarde automatique</h4>
+                      <p className="text-sm text-gray-600">Sauvegarder automatiquement vos données</p>
+                    </div>
+                    <div className="w-12 h-6 bg-blue-600 rounded-full relative">
+                      <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 right-0.5 shadow-sm"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                className="input"
-                placeholder="votre@email.com"
-              />
             </div>
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Mot de passe
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required
-                className="input"
-                placeholder="Votre mot de passe"
-              />
+          {activeTab === 'stats' && (
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Statistiques d'étude
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 border border-gray-200 rounded-lg text-center">
+                  <BookOpen className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900">0</p>
+                  <p className="text-sm text-gray-600">Cours importés</p>
+                </div>
+                
+                <div className="p-4 border border-gray-200 rounded-lg text-center">
+                  <Target className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900">0</p>
+                  <p className="text-sm text-gray-600">Sessions complétées</p>
+                </div>
+                
+                <div className="p-4 border border-gray-200 rounded-lg text-center">
+                  <Clock className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900">0h</p>
+                  <p className="text-sm text-gray-600">Temps d'étude</p>
+                </div>
+              </div>
+              
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-2">Progression</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">QCM complétés</span>
+                    <span className="text-sm font-medium">0</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Flashcards étudiées</span>
+                    <span className="text-sm font-medium">0</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Score moyen</span>
+                    <span className="text-sm font-medium">0%</span>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            {!isLoginMode && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Confirmer le mot de passe
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  required={!isLoginMode}
-                  className="input"
-                  placeholder="Confirmez votre mot de passe"
-                />
-              </div>
-            )}
-
-            {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              </div>
-            )}
-
-            {success && (
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
-                <p className="text-sm text-green-600 dark:text-green-400">{success}</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="btn-primary w-full flex items-center justify-center space-x-2"
-            >
-              {isLoginMode ? (
-                <>
-                  <LogIn className="w-4 h-4" />
-                  <span>Se connecter</span>
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4" />
-                  <span>S'inscrire</span>
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <button
-              onClick={handleGuestLogin}
-              className="w-full btn-secondary flex items-center justify-center space-x-2"
-            >
-              <Guest className="w-4 h-4" />
-              <span>Continuer en mode invité</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Toggle Mode */}
-        <div className="text-center">
-          <button
-            onClick={() => {
-              setIsLoginMode(!isLoginMode);
-              setError('');
-              setSuccess('');
-              setFormData({ name: '', email: '', password: '', confirmPassword: '' });
-            }}
-            className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm"
-          >
-            {isLoginMode 
-              ? "Pas encore de compte ? S'inscrire" 
-              : "Déjà un compte ? Se connecter"
-            }
-          </button>
-        </div>
-
-        {/* Info */}
-        <div className="card p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
-          <div className="flex items-start space-x-3">
-            <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                Données sécurisées
-              </h4>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                Toutes les données sont stockées localement dans votre navigateur. 
-                Aucune information n'est envoyée vers des serveurs externes.
-              </p>
-            </div>
-          </div>
-        </div>
+          )}
+        </motion.div>
       </motion.div>
     </div>
   );
