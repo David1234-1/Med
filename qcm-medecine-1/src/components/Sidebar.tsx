@@ -7,7 +7,6 @@ import {
   BookOpen, 
   MessageSquare, 
   User, 
-  Menu,
   X
 } from 'lucide-react';
 

@@ -4,7 +4,6 @@ import {
   BookOpen, 
   Clock, 
   Target, 
-  TrendingUp,
   Plus,
   FileText,
   Brain,
