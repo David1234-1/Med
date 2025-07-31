@@ -1,102 +1,40 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { authService } from './lib/auth';
-import { databaseUtils } from './lib/database';
-import { User } from './types';
-
-// Composants de layout
-import Sidebar from './components/layout/Sidebar';
-import Header from './components/layout/Header';
-import LoadingScreen from './components/ui/LoadingScreen';
-
-// Pages
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
-import Courses from './pages/Courses';
+import Import from './pages/Import';
 import Study from './pages/Study';
+import Assistant from './pages/Assistant';
 import Profile from './pages/Profile';
-import Auth from './pages/Auth';
-import NotFound from './pages/NotFound';
-
-// Contextes
 import { AuthProvider } from './contexts/AuthContext';
+import { StudyProvider } from './contexts/StudyContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        console.log('Initialisation de l\'application...');
-        
-        // Initialiser la base de données
-        await databaseUtils.initializeDatabase();
-        
-        // Charger l'utilisateur actuel
-        const currentUser = authService.getCurrentUser();
-        setUser(currentUser);
-        
-        console.log('Application initialisée avec succès');
-      } catch (error) {
-        console.error('Erreur lors de l\'initialisation:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeApp();
-  }, []);
-
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-            <AnimatePresence mode="wait">
-              {user ? (
-                <motion.div
-                  key="authenticated"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex h-screen"
-                >
-                  <Sidebar />
-                  <div className="flex-1 flex flex-col overflow-hidden">
-                    <Header />
-                    <main className="flex-1 overflow-y-auto p-6">
-                      <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/courses" element={<Courses />} />
-                        <Route path="/study" element={<Study />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </main>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="auth"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
+        <StudyProvider>
+          <Router>
+            <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+              <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+              
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900">
                   <Routes>
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="*" element={<Navigate to="/auth" replace />} />
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/import" element={<Import />} />
+                    <Route path="/study" element={<Study />} />
+                    <Route path="/assistant" element={<Assistant />} />
+                    <Route path="/profile" element={<Profile />} />
                   </Routes>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </Router>
+                </main>
+              </div>
+            </div>
+          </Router>
+        </StudyProvider>
       </AuthProvider>
     </ThemeProvider>
   );
